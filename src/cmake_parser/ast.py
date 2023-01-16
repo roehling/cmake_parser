@@ -22,10 +22,6 @@ class AstNode:
     pass
 
 
-class Expr:
-    pass
-
-
 AstNodeGenerator = Generator[AstNode, None, None]
 
 
@@ -54,37 +50,37 @@ class Comment(AstFileNode):
 
 @define
 class Macro(Builtin):
-    args: Expr
+    args: List[Token]
     body: List[AstNode]
 
 
 @define
 class Function(Builtin):
-    args: Expr
+    args: List[Token]
     body: List[AstNode]
 
 
 @define
 class Block(Builtin):
-    args: Expr
+    args: List[Token]
     body: List[AstNode]
 
 
 @define
 class ForEach(Builtin):
-    args: Expr
+    args: List[Token]
     body: List[AstNode]
 
 
 @define
 class While(Builtin):
-    args: Expr
+    args: List[Token]
     body: List[AstNode]
 
 
 @define
 class If(Builtin):
-    args: Expr
+    args: List[Token]
     if_true: List[AstNode]
     if_false: Optional[List[AstNode]]
 
@@ -103,11 +99,20 @@ class Return(Builtin):
 
 
 @define
-class UnparsedExpr(Expr):
+class Set(Builtin):
     args: List[Token]
 
 
 @define
-class CallSignature(Expr):
-    name: Optional[str]
-    args: List[str]
+class Unset(Builtin):
+    args: List[Token]
+
+
+@define
+class Option(Builtin):
+    args: List[Token]
+
+
+@define
+class Math(Builtin):
+    args: List[Token]

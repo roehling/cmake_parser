@@ -18,8 +18,6 @@ from typing import Callable, List, Optional, Type
 from .lexer import tokenize, TokenGenerator
 from .ast import *
 
-ExprParser = Callable[[List[Token]], Expr]
-
 
 class CMakeParseError(RuntimeError):
     pass
@@ -31,13 +29,13 @@ def _bail(item, data, msg):
     )
 
 
-def _parse_command_args(G: TokenGenerator) -> List[Token]:
+def _parse_argument_tokens(G: TokenGenerator) -> List[Token]:
     result = []
     token = next(G, None)
     while token is not None:
         result.append(token)
         if token.kind == "LPAREN":
-            result.extend(_parse_command_args(G))
+            result.extend(_parse_argument_tokens(G))
         if token.kind == "RPAREN":
             return result
         token = next(G, None)
@@ -68,7 +66,7 @@ def parse_raw(data: str) -> AstNodeGenerator:
             raise CMakeParseError("Expected '(' and got unexpected end of file")
         if lparen.kind != "LPAREN":
             _bail(lparen, data, "Expected '('")
-        args = _parse_command_args(G)
+        args = _parse_argument_tokens(G)
         rparen = args.pop()
         yield Command(
             line=token.line,
@@ -80,45 +78,12 @@ def parse_raw(data: str) -> AstNodeGenerator:
         token = next(G, None)
 
 
-def _is_identifier(s: str) -> bool:
-    return re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", s) is not None
-
-
-def _has_var_ref(token: Token) -> bool:
-    return re.search(r"(?<!\\)(?:\\\\)*\$", token.value) is not None
-
-
-def _expr_noop(tokens: List[Token]) -> Expr:
-    return UnparsedExpr(args=tokens)
-
-
-def parse_callsignature_expr(tokens: List[Token]) -> Expr:
-    if not tokens:
-        raise ValueError("Argument list must not be empty")
-    if any(_has_var_ref(t) for t in tokens if t.kind == "RAW"):
-        return UnparsedExpr(args=tokens)
-    if any(t for t in tokens if not _is_identifier(t.value)):
-        raise ValueError("Argument list has invalid identifiers")
-    return CallSignature(name=tokens[0].value.lower(), args=[t.value for t in tokens[1:]])
-
-
-def parse_boolean_expr(tokens: List[Token]) -> Expr:
-    if any(_has_var_ref(t) for t in tokens if t.kind == "RAW"):
-        return UnparsedExpr(args=tokens)
-    return UnparsedExpr(args=tokens)
-
-
 def _parse_block(
     cls: Type[AstNode],
-    expr_parser: ExprParser,
     cmd: Command,
     data: str,
     G: AstNodeGenerator,
 ) -> AstNodeGenerator:
-    try:
-        expr = expr_parser(cmd.args)
-    except ValueError as e:
-        _bail(cmd, data, str(e))
     sequence = list(
         _parse_elements(data, G, parent=cmd, until=[f"end{cmd.identifier.lower()}"])
     )
@@ -127,7 +92,7 @@ def _parse_block(
         line=cmd.line,
         column=cmd.column,
         span=slice(cmd.span.start, end.span.stop),
-        args=expr,
+        args=cmd.args,
         body=sequence,
     )
 
@@ -147,10 +112,6 @@ def _parse_noargs(
 
 
 def _parse_if(cmd: Command, data: str, G: AstNodeGenerator) -> AstNodeGenerator:
-    try:
-        boolean_expr = parse_boolean_expr(cmd.args)
-    except ValueError as e:
-        _bail(cmd, data, str(e))
     if_true = list(
         _parse_elements(data, G, parent=cmd, until=["else", "elseif", "endif"])
     )
@@ -160,7 +121,7 @@ def _parse_if(cmd: Command, data: str, G: AstNodeGenerator) -> AstNodeGenerator:
             line=cmd.line,
             column=cmd.column,
             span=slice(cmd.span.start, (if_true[-1] if if_true else cmd).span.stop),
-            args=boolean_expr,
+            args=cmd.args,
             if_true=if_true,
             if_false=list(_parse_if(end, data, G)),
         )
@@ -174,21 +135,25 @@ def _parse_if(cmd: Command, data: str, G: AstNodeGenerator) -> AstNodeGenerator:
         line=cmd.line,
         column=cmd.column,
         span=slice(cmd.span.start, end.span.stop),
-        args=boolean_expr,
+        args=cmd.args,
         if_true=if_true,
         if_false=if_false,
     )
 
 
 _transformers = {
-    "block": partial(_parse_block, Block, _expr_noop),
-    "macro": partial(_parse_block, Macro, parse_callsignature_expr),
-    "foreach": partial(_parse_block, ForEach, _expr_noop),
-    "function": partial(_parse_block, Function, parse_callsignature_expr),
-    "while": partial(_parse_block, While, parse_boolean_expr),
+    "block": partial(_parse_block, Block),
+    "macro": partial(_parse_block, Macro),
+    "foreach": partial(_parse_block, ForEach),
+    "function": partial(_parse_block, Function),
+    "while": partial(_parse_block, While),
     "break": partial(_parse_noargs, Break),
     "continue": partial(_parse_noargs, Continue),
     "return": partial(_parse_alias, Return),
+    "math": partial(_parse_alias, Math),
+    "set": partial(_parse_alias, Set),
+    "unset": partial(_parse_alias, Unset),
+    "option": partial(_parse_alias, Option),
     "if": _parse_if,
 }
 
