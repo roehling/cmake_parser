@@ -15,3 +15,4 @@
 # limitations under the License.
 from .lexer import Token, tokenize
 from .parser import CMakeParseError, parse_raw, parse_tree
+from .interpreter import CMakeResolveError, resolve_args

@@ -185,6 +185,6 @@ def _parse_elements(
         )
 
 
-def parse_tree(data: str) -> List[AstNode]:
+def parse_tree(data: str) -> AstNodeGenerator:
     G = parse_raw(data)
-    return list(_parse_elements(data, G))
+    return _parse_elements(data, G)

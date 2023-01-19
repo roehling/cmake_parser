@@ -15,9 +15,16 @@
 # limitations under the License.
 if __name__ == "__main__":
     import sys
-    from pprint import pprint
-    from .parser import parse_tree
 
-    with open(sys.argv[1]) as f:
-        test_data = f.read()
-    pprint(parse_tree(test_data))
+    if 0:
+        from pprint import pprint
+        from .parser import parse_tree
+        with open(sys.argv[1]) as f:
+            test_data = f.read()
+        pprint(parse_tree(test_data))
+
+    if 1:
+        from .lexer import Token
+        from .interpreter import resolve_args, Context
+        ctx = Context(var={"A": "one", "B": ["red\\;violet", "green", "blue"]})
+        print(resolve_args(ctx, [Token(kind="RAW", value="${A};${B}", span=None, line=None, column=None)]))
