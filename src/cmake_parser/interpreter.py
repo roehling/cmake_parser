@@ -35,7 +35,7 @@ class CMakeResolveError(RuntimeError):
 @define
 class Context:
     parent: Self = None
-    var: Dict[str, Union[str, List[str]]] = {}
+    var: Dict[str, str] = {}
     env: Dict[str, str] = {}
 
 
@@ -48,13 +48,19 @@ _token_spec = [
 ]
 
 _next_token = re.compile(
-    "|".join(f"(?P<{name}>{expr})" for name, expr in _token_spec),
-    re.MULTILINE | re.DOTALL,
+    "|".join(f"(?P<{name}>{expr})" for name, expr in _token_spec)
 ).match
 
 
-def _resolve_vars(ctx: Context, s: str) -> str:
+_esc_sequences = {
+    "r": "\r",
+    "n": "\n",
+    "t": "\t",
+    ";": "\\;",  # Semicolons get special treatment in _split()
+}
 
+
+def _resolve_vars(ctx: Context, s: str) -> str:
     def scan(s: str, pos: int) -> Tuple[str, int]:
         result = ""
         mo = _next_token(s, pos)
@@ -65,16 +71,15 @@ def _resolve_vars(ctx: Context, s: str) -> str:
                 var_type = mo.group("VAR_TYPE")
                 identifier, end_pos = scan(s, mo.end(kind))
                 if var_type == "":
-                    val = ctx.var.get(identifier, "")
-                    result += ";".join(val) if isinstance(val, list) else val
+                    result += ctx.var.get(identifier, "")
                 elif var_type == "ENV":
-                    identifier += ctx.env.get(identifier, "")
+                    result += ctx.env.get(identifier, "")
                 mo = _next_token(s, end_pos)
                 continue
             if kind == "VAR_END" and pos > 0:
                 return result, mo.end(kind)
             if kind == "ESCAPE":
-                result += val[1]
+                result += _esc_sequences.get(val[1], val[1])
             else:
                 result += val
             mo = _next_token(s, mo.end(kind))
@@ -86,7 +91,10 @@ def _resolve_vars(ctx: Context, s: str) -> str:
 
 
 def _split(s: str) -> List[str]:
-    return re.findall(r"(?:\\.|[^;\\])+", s)
+    result = []
+    for item in re.finditer(r"(?:\\.|[^;\\])+", s):
+        result.append(item.group(0).replace("\\;", ";"))
+    return result
 
 
 def resolve_args(ctx: Context, args: List[Token]) -> List[str]:
