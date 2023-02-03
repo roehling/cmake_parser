@@ -14,13 +14,10 @@
 # limitations under the License.
 import re
 from functools import partial
-from typing import Callable, List, Optional, Type
+from typing import List, Optional, Type
 from .lexer import tokenize, TokenGenerator
 from .ast import *
-
-
-class CMakeParseError(RuntimeError):
-    pass
+from .error import CMakeParseError
 
 
 def _bail(item, data, msg):

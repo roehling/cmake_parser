@@ -18,6 +18,7 @@ import re
 from attrs import define
 from typing import Dict, List, Tuple, Union
 from .lexer import Token
+from .error import CMakeResolveError
 
 
 try:
@@ -26,10 +27,6 @@ except ImportError:
     from typing import TypeVar
 
     Self = TypeVar("Self", bound="Context")
-
-
-class CMakeResolveError(RuntimeError):
-    pass
 
 
 @define
