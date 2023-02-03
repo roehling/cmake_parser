@@ -30,7 +30,8 @@ def _parse_argument_tokens(G: TokenGenerator) -> List[Token]:
     result = []
     token = next(G, None)
     while token is not None:
-        result.append(token)
+        if token.kind != "SEMICOLON":
+            result.append(token)
         if token.kind == "LPAREN":
             result.extend(_parse_argument_tokens(G))
         if token.kind == "RPAREN":
@@ -39,24 +40,25 @@ def _parse_argument_tokens(G: TokenGenerator) -> List[Token]:
     raise CMakeParseError("Expected ')' and got unexpected end of file")
 
 
-def parse_raw(data: str) -> AstNodeGenerator:
+def parse_raw(data: str, skip_comments: bool = False) -> AstNodeGenerator:
     G = tokenize(data)
     token = next(G, None)
     while token is not None:
         if token.kind == "COMMENT":
-            yield Comment(
-                line=token.line,
-                column=token.column,
-                comment=token.value,
-                span=token.span,
-            )
+            if not skip_comments:
+                yield Comment(
+                    line=token.line,
+                    column=token.column,
+                    comment=token.value,
+                    span=token.span,
+                )
             token = next(G, None)
             continue
         if token.kind == "UNMATCHED_BRACKET":
             _bail(token, data, "Unmatched opening bracket")
         if token.kind != "RAW":
             _bail(token, data, "Expected command name")
-        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]+$", token.value):
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", token.value):
             _bail(token, data, "Invalid command name identifier")
         lparen = next(G, None)
         if lparen is None:
@@ -151,6 +153,7 @@ _transformers = {
     "set": partial(_parse_alias, Set),
     "unset": partial(_parse_alias, Unset),
     "option": partial(_parse_alias, Option),
+    "include": partial(_parse_alias, Include),
     "if": _parse_if,
 }
 
@@ -182,6 +185,6 @@ def _parse_elements(
         )
 
 
-def parse_tree(data: str) -> AstNodeGenerator:
-    G = parse_raw(data)
+def parse_tree(data: str, skip_comments: bool = False) -> AstNodeGenerator:
+    G = parse_raw(data, skip_comments=skip_comments)
     return _parse_elements(data, G)

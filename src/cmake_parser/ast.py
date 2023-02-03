@@ -116,3 +116,8 @@ class Option(Builtin):
 @define
 class Math(Builtin):
     args: List[Token]
+
+
+@define
+class Include(Builtin):
+    args: List[Token]

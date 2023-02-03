@@ -16,7 +16,8 @@
 
 import re
 from attrs import define, evolve
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
+from .ast import *
 from .lexer import Token
 from .error import CMakeResolveError
 
@@ -34,6 +35,9 @@ class Context:
     parent: Self = None
     var: Dict[str, str] = {}
     env: Dict[str, str] = {}
+    cache: Dict[str, str] = {}
+    functions: Dict[str, Function] = {}
+    macros: Dict[str, Macro] = {}
 
 
 _token_spec = [
@@ -71,6 +75,8 @@ def _resolve_vars(ctx: Context, token: Token) -> str:
                     result += ctx.var.get(identifier, "")
                 elif var_type == "ENV":
                     result += ctx.env.get(identifier, "")
+                elif var_type == "CACHE":
+                    result += ctx.cache.get(identifier, "")
                 mo = _next_token(s, end_pos)
                 continue
             if kind == "VAR_END" and pos > 0:
@@ -107,5 +113,5 @@ def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
                 value = _resolve_vars(ctx, token)
             else:
                 value = token.value
-        result.append(evolve(token, value=value))
+            result.append(evolve(token, value=value))
     return result
