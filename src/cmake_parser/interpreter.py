@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import re
-from attrs import define
+from attrs import define, evolve
 from typing import Dict, List, Tuple, Union
 from .lexer import Token
 from .error import CMakeResolveError
@@ -57,7 +57,7 @@ _esc_sequences = {
 }
 
 
-def _resolve_vars(ctx: Context, s: str) -> str:
+def _resolve_vars(ctx: Context, token: Token) -> str:
     def scan(s: str, pos: int) -> Tuple[str, int]:
         result = ""
         mo = _next_token(s, pos)
@@ -81,10 +81,12 @@ def _resolve_vars(ctx: Context, s: str) -> str:
                 result += val
             mo = _next_token(s, mo.end(kind))
         if pos > 0:
-            raise CMakeResolveError("variable reference without terminating '}'")
+            raise CMakeResolveError(
+                f"variable reference without terminating '}}' at line {token.line}, column {token.column}: {s[pos:]!r}"
+            )
         return result, len(s)
 
-    return scan(s, 0)[0]
+    return scan(token.value, 0)[0]
 
 
 def _split(s: str) -> List[str]:
@@ -94,15 +96,16 @@ def _split(s: str) -> List[str]:
     return result
 
 
-def resolve_args(ctx: Context, args: List[Token]) -> List[str]:
+def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
     result = []
     for token in args:
         if token.kind == "RAW":
-            value = _resolve_vars(ctx, token.value)
-            result.extend(_split(value))
-        elif token.kind == "QUOTED":
-            value = _resolve_vars(ctx, token.value)
-            result.append(value)
+            value = _resolve_vars(ctx, token)
+            result.extend(evolve(token, value=item) for item in _split(value))
         else:
-            result.append(token.value)
+            if token.kind == "QUOTED":
+                value = _resolve_vars(ctx, token)
+            else:
+                value = token.value
+        result.append(evolve(token, value=value))
     return result
