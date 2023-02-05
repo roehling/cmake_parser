@@ -23,5 +23,5 @@ class CMakeParseError(CMakeError):
     pass
 
 
-class CMakeResolveError(CMakeError):
+class CMakeExprError(CMakeError):
     pass

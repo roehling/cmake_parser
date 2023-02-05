@@ -19,7 +19,7 @@ from attrs import define, evolve
 from typing import Dict, List, Tuple
 from .ast import *
 from .lexer import Token
-from .error import CMakeResolveError
+from .error import CMakeExprError
 
 
 try:
@@ -87,7 +87,7 @@ def _resolve_vars(ctx: Context, token: Token) -> str:
                 result += val
             mo = _next_token(s, mo.end(kind))
         if pos > 0:
-            raise CMakeResolveError(
+            raise CMakeExprError(
                 f"variable reference without terminating '}}' at line {token.line}, column {token.column}: {s[pos:]!r}"
             )
         return result, len(s)

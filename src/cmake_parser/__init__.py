@@ -13,6 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+from .error import *
 from .lexer import Token, tokenize
-from .parser import CMakeParseError, parse_raw, parse_tree
-from .interpreter import CMakeResolveError, resolve_args
+from .parser import parse_raw, parse_tree
+from .interpreter import resolve_args
