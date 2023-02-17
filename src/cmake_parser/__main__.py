@@ -36,6 +36,12 @@ def prepare_args():
         nargs="*",
         help="parse and resolve CMake arguments",
     )
+    m.add_argument(
+        "--eval-expr",
+        metavar="ARG",
+        nargs="*",
+        help="parse and evaluate boolean expression",
+    )
     p.add_argument(
         "-D",
         metavar="NAME=VALUE",
@@ -84,6 +90,16 @@ if __name__ == "__main__":
         cmd = next(parse_raw(f"_({' '.join(args.resolve_args)})"))
         ctx = Context(var=vars)
         pprint(resolve_args(ctx, cmd.args))
+        sys.exit(0)
+
+    if args.eval_expr:
+        from .parser import parse_raw
+        from .interpreter import Context, resolve_args, eval_expr
+
+        cmd = next(parse_raw(f"_({' '.join(args.eval_expr)})"))
+        ctx = Context(var=vars)
+        expr = resolve_args(ctx, cmd.args)
+        print(eval_expr(ctx, expr))
         sys.exit(0)
 
     sys.exit(1)
