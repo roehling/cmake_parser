@@ -44,7 +44,7 @@ class Context:
         return os.path.exists(f)
 
 
-_token_spec = [
+_TOKEN_SPEC = [
     ("ESCAPE", r"\\."),
     ("SEMICOLON", r";"),
     ("VAR_BEGIN", r"\$(?P<VAR_TYPE>[A-Za-z]*)\{"),
@@ -52,12 +52,12 @@ _token_spec = [
     ("LITERAL", r"[^\\\$\{\}]+"),
 ]
 
-_next_token = re.compile(
-    "|".join(f"(?P<{name}>{expr})" for name, expr in _token_spec)
+_NEXT_TOKEN = re.compile(
+    "|".join(f"(?P<{name}>{expr})" for name, expr in _TOKEN_SPEC)
 ).match
 
 
-_esc_sequences = {
+_ESC_SEQS = {
     "r": "\r",
     "n": "\n",
     "t": "\t",
@@ -68,7 +68,7 @@ _esc_sequences = {
 def _resolve_vars(ctx: Context, token: Token) -> str:
     def scan(s: str, pos: int) -> Tuple[str, int]:
         result = ""
-        mo = _next_token(s, pos)
+        mo = _NEXT_TOKEN(s, pos)
         while mo:
             kind = mo.lastgroup
             val = mo.group(kind)
@@ -81,15 +81,15 @@ def _resolve_vars(ctx: Context, token: Token) -> str:
                     result += ctx.env.get(identifier, "")
                 elif var_type == "CACHE":
                     result += ctx.cache.get(identifier, "")
-                mo = _next_token(s, end_pos)
+                mo = _NEXT_TOKEN(s, end_pos)
                 continue
             if kind == "VAR_END" and pos > 0:
                 return result, mo.end(kind)
             if kind == "ESCAPE":
-                result += _esc_sequences.get(val[1], val[1])
+                result += _ESC_SEQS.get(val[1], val[1])
             else:
                 result += val
-            mo = _next_token(s, mo.end(kind))
+            mo = _NEXT_TOKEN(s, mo.end(kind))
         if pos > 0:
             raise CMakeExprError(
                 f"variable reference without terminating '}}' at line {token.line}, column {token.column}: {s[pos:]!r}"
