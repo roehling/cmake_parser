@@ -17,7 +17,8 @@
 import re
 import os
 from attrs import define, evolve
-from typing import Dict, List, Tuple, Union
+from functools import partial
+from typing import Dict, List, Tuple, Union, Callable
 from .ast import *
 from .lexer import Token, TokenGenerator
 from .error import CMakeExprError
@@ -203,6 +204,41 @@ def _eval_command(ctx: Context, arg: Token) -> bool:
     return arg.value in ctx.functions or arg.value in ctx.macros
 
 
+def _eval_string_compare(
+    compare: Callable[[str, str], bool], ctx: Context, arg1: Token, arg2: Token
+):
+    value1 = (
+        ctx.var[arg1.value]
+        if arg1.kind == "RAW" and arg1.value in ctx.var
+        else arg1.value
+    )
+    value2 = (
+        ctx.var[arg2.value]
+        if arg2.kind == "RAW" and arg2.value in ctx.var
+        else arg2.value
+    )
+    return compare(value1, value2)
+
+
+def _eval_int_compare(
+    compare: Callable[[int, int], bool], ctx: Context, arg1: Token, arg2: Token
+):
+    value1 = (
+        ctx.var[arg1.value]
+        if arg1.kind == "RAW" and arg1.value in ctx.var
+        else arg1.value
+    )
+    value2 = (
+        ctx.var[arg2.value]
+        if arg2.kind == "RAW" and arg2.value in ctx.var
+        else arg2.value
+    )
+    try:
+        return compare(int(value1), int(value2))
+    except ValueError:
+        return False
+
+
 _PRECEDENCES = {
     "AND": 1,
     "OR": 1,
@@ -215,7 +251,18 @@ _UNARY_OPS = {
     "COMMAND": _eval_command,
 }
 
-_BINARY_OPS = {}
+_BINARY_OPS = {
+    "EQUAL": partial(_eval_int_compare, lambda x, y: x == y),
+    "LESS": partial(_eval_int_compare, lambda x, y: x < y),
+    "LESS_EQUAL": partial(_eval_int_compare, lambda x, y: x <= y),
+    "GREATER": partial(_eval_int_compare, lambda x, y: x > y),
+    "GREATER_EQUAL": partial(_eval_int_compare, lambda x, y: x >= y),
+    "STREQUAL": partial(_eval_string_compare, lambda x, y: x == y),
+    "STRLESS": partial(_eval_string_compare, lambda x, y: x < y),
+    "STRLESS_EQUAL": partial(_eval_string_compare, lambda x, y: x <= y),
+    "STRGREATER": partial(_eval_string_compare, lambda x, y: x > y),
+    "STRGREATER_EQUAL": partial(_eval_string_compare, lambda x, y: x >= y),
+}
 
 
 def _eval_expr(ctx: Context, G: LookAheadIterator, precedence: int) -> bool:
@@ -250,7 +297,9 @@ def _eval_expr(ctx: Context, G: LookAheadIterator, precedence: int) -> bool:
                     binary_op = _BINARY_OPS.get(token.value, None)
                     if binary_op:
                         if not stack:
-                            raise CMakeExprError(f"missing argument for {token.value} operator")
+                            raise CMakeExprError(
+                                f"missing argument for {token.value} operator"
+                            )
                         first_arg = stack.pop()
                         second_arg = _get_argument(token.value, G)
                         stack.append(binary_op(ctx, first_arg, second_arg))
