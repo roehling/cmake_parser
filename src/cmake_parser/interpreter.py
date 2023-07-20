@@ -13,6 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+The :mod:`cmake_parser.interpreter` module provides advanced helpers to
+execute CMake code in Python.
+"""
 
 import re
 import os
@@ -34,6 +38,17 @@ except ImportError:
 
 @define
 class Context:
+    """
+    Execution context for CMake code.
+
+    :param parent: the parent of a scoped context or :const:`None` for the top-level context.
+    :param var: defined CMake variables
+    :param env: available environment variables
+    :param cache: defined CMake cache variables
+    :param functions: defined functions
+    :param macros: defined macros
+    """
+
     parent: Self = None
     var: Dict[str, str] = {}
     env: Dict[str, str] = {}
@@ -41,7 +56,13 @@ class Context:
     functions: Dict[str, Function] = {}
     macros: Dict[str, Macro] = {}
 
-    def exists(self, f):
+    def exists(self, f: str) -> bool:
+        """
+        Helper function to check if a file or directory exists
+
+        :param f: a path name
+        :return: :const:`True` if the path name refers to an existing file or directory.
+        """
         return os.path.exists(f)
 
 

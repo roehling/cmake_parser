@@ -16,11 +16,18 @@
 
 
 class CMakeError(RuntimeError):
-    pass
+    """
+    Exception base class for :mod:`cmake_parser`.
+    """
 
 
 class CMakeParseError(CMakeError):
-    pass
+    """
+    Exception that indicates a parsing error.
+
+    This exception is raised by :func:`~.parser.parse_raw` and
+    :func:`~parser.parse_tree`.
+    """
 
 
 class CMakeExprError(CMakeError):

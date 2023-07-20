@@ -13,6 +13,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+The :mod:`cmake_parser.lexer` module provides the basic functionality for tokenizing
+CMake code into its syntactic constituents.
+"""
+
 import re
 from attrs import define
 from typing import Generator, List, Tuple
@@ -37,6 +42,28 @@ _next_token = re.compile(
 
 @define
 class Token:
+    """
+    Parser token.
+
+    Instances of this class are yielded by :func:`tokenize` and represent the
+    syntactic primitives of CMake code.
+
+    :param kind: the token type. This attribute can take one of the string
+        constants ``COMMENT``, ``RAW``, ``QUOTED``, ``BRACKETED``, ``LPAREN``,
+        ``RPAREN``, or ``SEMICOLON``. Two additional token types, ``UNMATCHED_BRACKET``
+        and ``UNPARSEABLE``, can occur in malformed CMake code.
+
+    :param value: the literal text that comprises the token, without the enclosing
+        quotes or brackets (if applicable).
+
+    :param span: the token location in the tokenized string.
+
+    :param line: the line number where the token begins. Some tokens may span multiple
+        lines.
+
+    :param column: the column where the token begins.
+    """
+
     kind: str
     value: str
     span: slice
@@ -60,6 +87,21 @@ def normalize_lineendings(data: str) -> str:
 
 
 def tokenize(data: str) -> TokenGenerator:
+    """
+    Split CMake code into parser tokens.
+
+    Usually, you will not call this function directly but through
+    :func:`~cmake_parser.parser.parse_raw` or :func:`~cmake_parser.parser.parse_tree`.
+    :func:`tokenize` splits the input string into meaningful chunks for the parser.
+    It will not resolve variable references nor split arguments yet; the dynamic nature of
+    the CMake language requires this be handled at a later stage.
+
+    :param data: a string containing CMake code.
+    :return: a generator that yields the parser tokens as they occur in the code.
+
+    >>> list((t.kind, t.value) for t in tokenize('foo("bar")'))
+    [('RAW', 'foo'), ('LPAREN', '('), ('QUOTED', 'bar'), ('RPAREN', ')')]
+    """
     pos = 0
     LR = line_ranges(data)
     L = next(LR, None)

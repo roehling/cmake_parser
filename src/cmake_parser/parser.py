@@ -12,6 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+The :mod:`cmake_parser.parser` module provides parsing and syntax validation.
+"""
 import re
 from functools import partial
 from typing import List, Optional, Type
@@ -41,6 +44,24 @@ def _parse_argument_tokens(G: TokenGenerator) -> List[Token]:
 
 
 def parse_raw(data: str, skip_comments: bool = False) -> AstNodeGenerator:
+    """
+    Parse CMake code and return a simplified AST.
+
+    The simplified AST is a list of
+    :class:`~cmake_parser.ast.Command` and possibly :class:`~cmake_parser.ast.Comment` nodes.
+    In particular, hierarchical structures such as ``if()`` or ``function()`` blocks are not
+    resolved and its constituents returned as unrelated :class:`~cmake_parser.ast.Command` nodes.
+
+    Unlike :func:`parse_tree`, this function will happily parse and return ASTs for structurally
+    broken code, such as ``block()`` statements without corresponding ``endblock()``, as long as the
+    individual commands remain valid, i.e., have valid names and no unbalanced parentheses, quotes, or brackets.
+
+    :param data: a string containing CMake code
+    :param skip_comments: if :const:`True`, omit any :class:`~cmake_parser.ast.Comment` nodes from the output
+    :return: a generator that yields AST nodes
+    :raises: :exc:`~cmake_parser.error.CMakeParseError` if the CMake code is not syntactically valid
+
+    """
     G = tokenize(data)
     token = next(G, None)
     while token is not None:
@@ -186,5 +207,17 @@ def _parse_elements(
 
 
 def parse_tree(data: str, skip_comments: bool = False) -> AstNodeGenerator:
+    """
+    Parse CMake code and return a fully constructed AST.
+
+    Unlike :func:`parse_raw`, this function will resolve block structures such as ``function()`` definitions
+    and ``if()`` conditionals and return specialized AST nodes for them. Therefore, it requires not only
+    individual commands be valid, but the whole structure must be well-formed.
+
+    :param data: a string containing CMake code
+    :param skip_comments: if :const:`True`, omit any :class:`~cmake_parser.ast.Comment` nodes from the output
+    :return: a generator that yields AST nodes
+    :raises: :exc:`~cmake_parser.error.CMakeParseError` if the CMake code is not syntactically valid
+    """
     G = parse_raw(data, skip_comments=skip_comments)
     return _parse_elements(data, G)
