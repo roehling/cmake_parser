@@ -1,0 +1,3 @@
+sphinx
+sphinx-autodoc-typehints
+attrs >= 21.3.0
