@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-The :mod:`cmake_parser.parser` module provides parsing and syntax validation.
+Core functionality for parsing CMake code.
 """
 import re
 from functools import partial

@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-The :mod:`cmake_parser.ast` module provides the Abstract Syntax Tree
-elements which are returned by :func:`~cmake_parser.parser.parse_raw` and :func:`~cmake_parser.parser.parse_tree`.
+Abstract Syntax Tree elements which are returned by
+:func:`~cmake_parser.parser.parse_raw` and
+:func:`~cmake_parser.parser.parse_tree`.
 """
 from attrs import define
 from typing import Generator, List, Optional

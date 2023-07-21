@@ -1,5 +1,4 @@
-..
-    CMake Parser
+..  CMake Parser
     Copyright 2023 Timo Röhling <timo@gaussglocke.de>
     SPDX-License-Identifier: Apache-2.0
 
@@ -7,17 +6,18 @@ cmake_parser
 ============
 
 :mod:`cmake_parser` is a pure Python parser for CMake code. It is still work in progress,
-but has reasonable support for the most important CMake features: 
+but is reasonably usable. It provides the following features:
 
 * AST representation of CMake code
 * Correct handling of quoted and bracketed values
 * Variable expansion
-* Expression evaluation
+* Basic boolean expression evaluation
 
-Notably missing are:
+Notably missing but planned are:
 
-* Generator expressions
-* Automatic macro expansion
+* Some operators for boolean expressions
+* Generator expression support
+* Script engine for convenient CMake execution within Python
 
 .. toctree::
    :maxdepth: 2

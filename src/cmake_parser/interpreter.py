@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-The :mod:`cmake_parser.interpreter` module provides advanced helpers to
-execute CMake code in Python.
+Helper functions for executing CMake code in Python.
 """
 
 import re

@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-The :mod:`cmake_parser.lexer` module provides the basic functionality for tokenizing
-CMake code into its syntactic constituents.
+Basic functionality for tokenizing CMake code into its syntactic constituents.
 """
 
 import re
