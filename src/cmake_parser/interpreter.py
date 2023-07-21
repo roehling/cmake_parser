@@ -128,6 +128,25 @@ def _split(s: str) -> List[str]:
 
 
 def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
+    """
+    Resolve variable references in argument lists.
+
+    Due to the semantics of unquoted variable references, this
+    function may also change the number and type of arguments,
+    which means that the returned argument list can have more or
+    fewer items than the input, depending on the execution context.
+
+    The returned token list will have a proper 1:1 relation between
+    function arguments and tokens. Boolean expressions are suitable
+    input for :func:`eval_expr` after they have been processed by this
+    function.
+
+    :param ctx: the current execution context
+    :param args: the argument tokens as they were parsed by
+        :func:`~cmake_parser.parser.parse_raw` or
+        :func:`~cmake_parser.parser.parse_tree`.
+    :return: a new argument list with all variable references resolved
+    """
     result = []
     for token in args:
         if token.kind == "RAW":
@@ -341,5 +360,20 @@ def _eval_expr(ctx: Context, G: LookAheadIterator, precedence: int) -> bool:
 
 
 def eval_expr(ctx: Context, args: List[Token]) -> bool:
+    """
+    Evaluate boolean expressions.
+
+    Some CMake command such as ``if()`` have a boolean expression as argument.
+    This function will evaluate such expressions to :const:`False` or :const:`True`
+    given the current execution context.
+
+    .. note:: This function does not resolve variable references, so you need to
+        pass the argument list through :func:`resolve_args` first.
+
+    :param ctx: the current execution context
+    :param args: the boolean expression with all variable references resolved
+    :return: the boolean value of the expression
+    :raise: :exc:`~cmake_parser.error.CMakeExprError` if the expression is malformed.
+    """
     G = LookAheadIterator(args)
     return _eval_expr(ctx, G, precedence=1)

@@ -32,7 +32,14 @@ AstNodeGenerator = Generator[AstNode, None, None]
 
 @define
 class AstFileNode:
-    """Base class for all AST nodes with associated file location"""
+    """
+    Base class for all AST nodes with associated file location
+
+    :param line: the line number where the corresponding code begins.
+        Note that the code can span multiple lines.
+    :param column: the column where the corresponding code begins
+    :param span: the code location in the parsed string
+    """
 
     line: int
     column: int
