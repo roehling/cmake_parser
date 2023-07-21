@@ -28,6 +28,8 @@ jobs:
                 python-version: 3.x
           - name: Setup Sphinx
             run: pip install -r doc/requirements.txt
+          - name: Determine module version
+            run: python -m setuptools_scm
           - name: Build documentation
             run: sphinx-build -M html doc doc/_build
           - name: Upload artifact
