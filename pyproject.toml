@@ -15,7 +15,7 @@
 # limitations under the License. 
 
 [build-system]
-requires = ["setuptools >= 61"]
+requires = ["setuptools >= 61", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -32,5 +32,5 @@ dependencies = [
 ]
 dynamic = ["version"]
 
-[tool.setuptools.dynamic]
-version = { attr = "cmake_parser.__version__" }
+[tool.setuptools_scm]
+write_to = "src/cmake_parser/_version.py"

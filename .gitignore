@@ -6,3 +6,4 @@ __pycache__/
 /build/
 /doc/_build/
 /src/*.egg-info/
+/src/cmake_parser/_version.py

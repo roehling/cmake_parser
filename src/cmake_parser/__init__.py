@@ -19,4 +19,7 @@ from .lexer import Token, tokenize
 from .parser import parse_raw, parse_tree
 from .interpreter import resolve_args
 
-__version__ = "0.9.0"
+try:
+    from ._version import __version__
+except ImportError:
+    pass
