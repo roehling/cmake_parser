@@ -21,7 +21,7 @@ import re
 import os
 from attrs import define, evolve
 from functools import partial
-from typing import Dict, List, Tuple, Union, Callable
+from typing import Dict, List, Tuple, Union, Callable, Any
 from .ast import *
 from .lexer import Token, TokenGenerator
 from .error import CMakeExprError
@@ -243,25 +243,27 @@ def _eval_command(ctx: Context, arg: Token) -> bool:
     return arg.value in ctx.functions or arg.value in ctx.macros
 
 
-def _eval_string_compare(
-    compare: Callable[[str, str], bool], ctx: Context, arg1: Token, arg2: Token
-):
-    value1 = (
-        ctx.var[arg1.value]
-        if arg1.kind == "RAW" and arg1.value in ctx.var
-        else arg1.value
-    )
-    value2 = (
-        ctx.var[arg2.value]
-        if arg2.kind == "RAW" and arg2.value in ctx.var
-        else arg2.value
-    )
-    return compare(value1, value2)
+def _path(s: str) -> str:
+    return re.sub(r"([\\/])\1+", r"\1", s)
 
 
-def _eval_int_compare(
-    compare: Callable[[int, int], bool], ctx: Context, arg1: Token, arg2: Token
-):
+def _version(s: str) -> Tuple[int, int, int, int]:
+    def _try_int(s: str) -> int:
+        try:
+            return int(s)
+        except ValueError:
+            return 0
+
+    return tuple(_try_int(v) for v in (s.split(".") + ["0", "0", "0", "0"])[:4])
+
+
+def _eval_compare(
+    coerce: type[Any],
+    compare: Callable[[Any, Any], bool],
+    ctx: Context,
+    arg1: Token,
+    arg2: Token,
+) -> bool:
     value1 = (
         ctx.var[arg1.value]
         if arg1.kind == "RAW" and arg1.value in ctx.var
@@ -273,7 +275,9 @@ def _eval_int_compare(
         else arg2.value
     )
     try:
-        return compare(int(value1), int(value2))
+        c1 = coerce(value1)
+        c2 = coerce(value2)
+        return compare(c1, c2)
     except ValueError:
         return False
 
@@ -291,16 +295,22 @@ _UNARY_OPS = {
 }
 
 _BINARY_OPS = {
-    "EQUAL": partial(_eval_int_compare, lambda x, y: x == y),
-    "LESS": partial(_eval_int_compare, lambda x, y: x < y),
-    "LESS_EQUAL": partial(_eval_int_compare, lambda x, y: x <= y),
-    "GREATER": partial(_eval_int_compare, lambda x, y: x > y),
-    "GREATER_EQUAL": partial(_eval_int_compare, lambda x, y: x >= y),
-    "STREQUAL": partial(_eval_string_compare, lambda x, y: x == y),
-    "STRLESS": partial(_eval_string_compare, lambda x, y: x < y),
-    "STRLESS_EQUAL": partial(_eval_string_compare, lambda x, y: x <= y),
-    "STRGREATER": partial(_eval_string_compare, lambda x, y: x > y),
-    "STRGREATER_EQUAL": partial(_eval_string_compare, lambda x, y: x >= y),
+    "EQUAL": partial(_eval_compare, int, lambda x, y: x == y),
+    "LESS": partial(_eval_compare, int, lambda x, y: x < y),
+    "LESS_EQUAL": partial(_eval_compare, int, lambda x, y: x <= y),
+    "GREATER": partial(_eval_compare, int, lambda x, y: x > y),
+    "GREATER_EQUAL": partial(_eval_compare, int, lambda x, y: x >= y),
+    "STREQUAL": partial(_eval_compare, str, lambda x, y: x == y),
+    "STRLESS": partial(_eval_compare, str, lambda x, y: x < y),
+    "STRLESS_EQUAL": partial(_eval_compare, str, lambda x, y: x <= y),
+    "STRGREATER": partial(_eval_compare, str, lambda x, y: x > y),
+    "STRGREATER_EQUAL": partial(_eval_compare, str, lambda x, y: x >= y),
+    "VERSION_EQUAL": partial(_eval_compare, _version, lambda x, y: x == y),
+    "VERSION_LESS": partial(_eval_compare, _version, lambda x, y: x < y),
+    "VERSION_LESS_EQUAL": partial(_eval_compare, _version, lambda x, y: x <= y),
+    "VERSION_GREATER": partial(_eval_compare, _version, lambda x, y: x > y),
+    "VERSION_GREATER_EQUAL": partial(_eval_compare, _version, lambda x, y: x >= y),
+    "PATH_EQUAL": partial(_eval_compare, _path, lambda x, y: x == y),
 }
 
 
