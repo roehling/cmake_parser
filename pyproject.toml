@@ -13,6 +13,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License. 
+
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools >= 61"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "cmake_parser"
+description = "Pure Python library to parse CMake scripts"
+readme = "README.rst"
+requires-python = ">= 3.6"
+license = {file = "LICENSES/Apache-2.0.txt"}
+authors = [
+    { name = "Timo Röhling", email = "timo@gaussglocke.de"},
+]
+dependencies = [
+    "attrs >= 21.3.0"
+]
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = { attr = "cmake_parser.__version__" }
