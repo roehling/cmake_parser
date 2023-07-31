@@ -37,8 +37,8 @@ class AstFileNode:
 
     :param line: the line number where the corresponding code begins.
         Note that the code can span multiple lines.
-    :param column: the column where the corresponding code begins
-    :param span: the code location in the parsed string
+    :param column: the column where the corresponding code begins.
+    :param span: the code location in the parsed string.
     """
 
     line: int
@@ -55,12 +55,10 @@ class Command(AstFileNode):
     list of arguments in parentheses. :class:`Command` and :class:`Comment` are the two
     possible outputs of :func:`~cmake_parser.parser.parse_raw`.
 
-    :param identifier: the function or instruction name to be invoked
+    :param identifier: the function or instruction name to be invoked.
     :param args: the tokens which form the argumen list.
 
-    .. note:: As variable expansion can split tokens into multiple arguments or remove
-        them from the argument list altogether, there is no 1:1 relation between tokens and
-        arguments.
+    .. include:: argument_note.rst
     """
 
     identifier: str
@@ -80,6 +78,8 @@ class Comment(AstFileNode):
     This is the only AST node which does not represent executable code. Both
     :func:`~cmake_parser.parser.parse_raw` and :func:`~cmake_parser.parser.parse_tree` can be instructed
     to omit comments from their output.
+
+    :param comment: The comment string without leading ``#`` or enclosing brackets.
     """
 
     comment: str
@@ -87,74 +87,202 @@ class Comment(AstFileNode):
 
 @define
 class Macro(Builtin):
+    """
+    Macro definition.
+
+    This node represents a ``macro()``/``endmacro()`` block.
+
+    :param args: the list of named macro parameters.
+    :param body: the list of commands which form the macro.
+
+    .. include:: argument_note.rst
+    """
+
     args: List[Token]
     body: List[AstNode]
 
 
 @define
 class Function(Builtin):
+    """
+    Macro definition.
+
+    This node represents a ``function()``/``endfunction()`` block.
+
+    :param args: the list of named function parameters.
+    :param body: the list of commands which form the function.
+
+    .. include:: argument_note.rst
+    """
+
     args: List[Token]
     body: List[AstNode]
 
 
 @define
 class Block(Builtin):
+    """
+    Scoped block.
+
+    This node represents a ``block()``/``endblock()`` block.
+
+    :param args: block arguments.
+    :param body: the list of commands which form the block.
+
+    .. include:: argument_note.rst
+    """
+
     args: List[Token]
     body: List[AstNode]
 
 
 @define
 class ForEach(Builtin):
+    """
+    ForEach Loop.
+
+    This node represents a ``foreach()``/``endforeach()`` block.
+
+    :param args: loop arguments.
+    :param body: the list of commands which form the loop.
+
+    .. include:: argument_note.rst
+    """
+
     args: List[Token]
     body: List[AstNode]
 
 
 @define
 class While(Builtin):
+    """
+    While Loop.
+
+    This node represents a ``while()``/``endwhile()`` block.
+
+    :param args: boolean expression for loop invariant.
+    :param body: the list of commands which form the loop.
+    """
+
     args: List[Token]
     body: List[AstNode]
 
 
 @define
 class If(Builtin):
+    """
+    Conditional block.
+
+    This node represents a ``if()``/``else()``/``endif()`` block. ``elseif()`` statements are converted
+    into a single :py:class:`If` command in ``if_false``.
+
+    :param args: boolean expression.
+    :param if_true: the list of commands to be executed if the expression evaluates to :py:const:`True`.
+    :param if_false: the list of commands to be executed if the expression evaluates to :py:const:`False`.
+    """
+
     args: List[Token]
     if_true: List[AstNode]
     if_false: Optional[List[AstNode]]
 
 
 class Break(Builtin):
-    pass
+    """
+    Loop exit.
+
+    This node represents the ``break()`` command.
+    """
 
 
 class Continue(Builtin):
-    pass
+    """
+    Loop continuation.
+
+    This node represents the ``continue()`` command.
+    """
 
 
 @define
 class Return(Builtin):
+    """
+    Return from function or module.
+
+    This node represents the ``return()`` command.
+
+    :param args: list of arguments
+
+    .. include:: argument_note.rst
+    """
+
     args: List[Token]
 
 
 @define
 class Set(Builtin):
+    """
+    Set variable.
+
+    This node represents the ``set()`` command.
+
+    :param args: list of arguments
+
+    .. include:: argument_note.rst
+    """
+
     args: List[Token]
 
 
 @define
 class Unset(Builtin):
+    """
+    Unset variable.
+
+    This node represents the ``unset()`` command.
+
+    :param args: list of arguments
+
+    .. include:: argument_note.rst
+    """
+
     args: List[Token]
 
 
 @define
 class Option(Builtin):
+    """
+    Declare CMake option.
+
+    This node represents the ``option()`` command.
+
+    :param args: option definition
+    """
+
     args: List[Token]
 
 
 @define
 class Math(Builtin):
+    """
+    Math expression.
+
+    This node represents the ``math()`` command.
+
+    :param args: mathematical expression
+    """
+
     args: List[Token]
 
 
 @define
 class Include(Builtin):
+    """
+    Include other CMake file.
+
+    This node represents the ``include()`` command.
+
+    :param args: list of arguments
+
+    .. include:: argument_note.rst
+    """
+
     args: List[Token]
