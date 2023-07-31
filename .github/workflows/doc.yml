@@ -1,7 +1,7 @@
 # CMake Parser
 # Copyright 2023 Timo Röhling <timo@gaussglocke.de>
 # SPDX-License-Identifier: Apache-2.0
-name: Deploy Sphinx documentation
+name: Sphinx documentation
 on:
     push:
         branches: ['main']
