@@ -27,10 +27,19 @@ license = {file = "LICENSES/Apache-2.0.txt"}
 authors = [
     { name = "Timo Röhling", email = "timo@gaussglocke.de"},
 ]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "attrs >= 21.3.0"
 ]
 dynamic = ["version"]
+
+[project.urls]
+Github = "https://github.com/roehling/cmake_parser"
+Documentation = "https://roehling.github.io/cmake_parser/"
 
 [tool.setuptools_scm]
 write_to = "src/cmake_parser/_version.py"
