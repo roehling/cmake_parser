@@ -6,6 +6,14 @@
 Changelog
 #########
 
+0.9.2
+=====
+
+Fixed
+-----
+
+* Fixed capitalization of `GitHub` URL for PyPI
+
 0.9.1
 =====
 
