@@ -38,7 +38,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Github = "https://github.com/roehling/cmake_parser"
+GitHub = "https://github.com/roehling/cmake_parser"
 Documentation = "https://roehling.github.io/cmake_parser/"
 
 [tool.setuptools_scm]
