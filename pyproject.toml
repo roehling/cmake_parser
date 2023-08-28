@@ -27,6 +27,9 @@ license = {file = "LICENSES/Apache-2.0.txt"}
 authors = [
     { name = "Timo Röhling", email = "timo@gaussglocke.de"},
 ]
+urls."Homepage" = "https://roehling.github.io/cmake_parser/"
+urls."Bug Reports" = "https://github.com/roehling/cmake_parser/issues"
+urls."Source" = "https://github.com/roehling/cmake_parser"
 dependencies = [
     "attrs >= 21.3.0"
 ]
