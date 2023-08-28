@@ -30,6 +30,11 @@ authors = [
 urls."Homepage" = "https://roehling.github.io/cmake_parser/"
 urls."Bug Reports" = "https://github.com/roehling/cmake_parser/issues"
 urls."Source" = "https://github.com/roehling/cmake_parser"
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "attrs >= 21.3.0"
 ]
