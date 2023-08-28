@@ -21,7 +21,7 @@ import re
 import os
 from attrs import define, evolve
 from functools import partial
-from typing import Dict, List, Tuple, Union, Callable, Any
+from typing import Dict, List, Tuple, Union, Callable, Any, Type
 from .ast import *
 from .lexer import Token, TokenGenerator
 from .error import CMakeExprError
@@ -258,7 +258,7 @@ def _version(s: str) -> Tuple[int, int, int, int]:
 
 
 def _eval_compare(
-    coerce: type[Any],
+    coerce: Type[Any],
     compare: Callable[[Any, Any], bool],
     ctx: Context,
     arg1: Token,
