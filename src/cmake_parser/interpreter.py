@@ -19,7 +19,7 @@ Helper functions for executing CMake code in Python.
 
 import re
 import os
-from attrs import define, evolve
+from dataclasses import dataclass, replace, field
 from functools import partial
 from typing import Dict, List, Tuple, Union, Callable, Any, Type
 from .ast import *
@@ -35,25 +35,25 @@ except ImportError:
     Self = TypeVar("Self", bound="Context")
 
 
-@define
+@dataclass
 class Context:
     """
     Execution context for CMake code.
 
     :param parent: the parent of a scoped context or :const:`None` for the top-level context.
-    :param var: defined CMake variables
+    :param var: dataclassd CMake variables
     :param env: available environment variables
-    :param cache: defined CMake cache variables
-    :param functions: defined functions
-    :param macros: defined macros
+    :param cache: dataclassd CMake cache variables
+    :param functions: dataclassd functions
+    :param macros: dataclassd macros
     """
 
     parent: Self = None
-    var: Dict[str, str] = {}
-    env: Dict[str, str] = {}
-    cache: Dict[str, str] = {}
-    functions: Dict[str, Function] = {}
-    macros: Dict[str, Macro] = {}
+    var: Dict[str, str] = field(default_factory=dict)
+    env: Dict[str, str] = field(default_factory=dict)
+    cache: Dict[str, str] = field(default_factory=dict)
+    functions: Dict[str, Function] = field(default_factory=dict)
+    macros: Dict[str, Macro] = field(default_factory=dict)
 
     def exists(self, f: str) -> bool:
         """
@@ -151,13 +151,13 @@ def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
     for token in args:
         if token.kind == "RAW":
             value = _resolve_vars(ctx, token)
-            result.extend(evolve(token, value=item) for item in _split(value))
+            result.extend(replace(token, value=item) for item in _split(value))
         else:
             if token.kind == "QUOTED":
                 value = _resolve_vars(ctx, token)
             else:
                 value = token.value
-            result.append(evolve(token, value=value))
+            result.append(replace(token, value=value))
     return result
 
 
@@ -231,7 +231,7 @@ def _get_argument(op: str, G: TokenGenerator) -> Token:
     return token
 
 
-def _eval_defined(ctx: Context, arg: Token) -> bool:
+def _eval_dataclassd(ctx: Context, arg: Token) -> bool:
     return arg.value in ctx.var
 
 
@@ -289,7 +289,7 @@ _PRECEDENCES = {
 }
 
 _UNARY_OPS = {
-    "DEFINED": _eval_defined,
+    "DEFINED": _eval_dataclassd,
     "EXISTS": _eval_exists,
     "COMMAND": _eval_command,
 }

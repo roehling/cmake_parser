@@ -18,7 +18,7 @@ Abstract Syntax Tree elements which are returned by
 :func:`~cmake_parser.parser.parse_raw` and
 :func:`~cmake_parser.parser.parse_tree`.
 """
-from attrs import define
+from dataclasses import dataclass
 from typing import Generator, List, Optional
 from .lexer import Token
 
@@ -30,7 +30,7 @@ class AstNode:
 AstNodeGenerator = Generator[AstNode, None, None]
 
 
-@define
+@dataclass
 class AstFileNode:
     """
     Base class for all AST nodes with associated file location
@@ -46,7 +46,7 @@ class AstFileNode:
     span: slice
 
 
-@define
+@dataclass
 class Command(AstFileNode):
     """
     Generic representation of a single CMake instruction.
@@ -65,12 +65,12 @@ class Command(AstFileNode):
     args: List[Token]
 
 
-@define
+@dataclass
 class Builtin(AstFileNode):
     """Base class for AST nodes which represent CMake built-in instructions"""
 
 
-@define
+@dataclass
 class Comment(AstFileNode):
     """
     CMake Comment.
@@ -85,7 +85,7 @@ class Comment(AstFileNode):
     comment: str
 
 
-@define
+@dataclass
 class Macro(Builtin):
     """
     Macro definition.
@@ -102,7 +102,7 @@ class Macro(Builtin):
     body: List[AstNode]
 
 
-@define
+@dataclass
 class Function(Builtin):
     """
     Macro definition.
@@ -119,7 +119,7 @@ class Function(Builtin):
     body: List[AstNode]
 
 
-@define
+@dataclass
 class Block(Builtin):
     """
     Scoped block.
@@ -136,7 +136,7 @@ class Block(Builtin):
     body: List[AstNode]
 
 
-@define
+@dataclass
 class ForEach(Builtin):
     """
     ForEach Loop.
@@ -153,7 +153,7 @@ class ForEach(Builtin):
     body: List[AstNode]
 
 
-@define
+@dataclass
 class While(Builtin):
     """
     While Loop.
@@ -168,7 +168,7 @@ class While(Builtin):
     body: List[AstNode]
 
 
-@define
+@dataclass
 class If(Builtin):
     """
     Conditional block.
@@ -202,7 +202,7 @@ class Continue(Builtin):
     """
 
 
-@define
+@dataclass
 class Return(Builtin):
     """
     Return from function or module.
@@ -217,7 +217,7 @@ class Return(Builtin):
     args: List[Token]
 
 
-@define
+@dataclass
 class Set(Builtin):
     """
     Set variable.
@@ -232,7 +232,7 @@ class Set(Builtin):
     args: List[Token]
 
 
-@define
+@dataclass
 class Unset(Builtin):
     """
     Unset variable.
@@ -247,7 +247,7 @@ class Unset(Builtin):
     args: List[Token]
 
 
-@define
+@dataclass
 class Option(Builtin):
     """
     Declare CMake option.
@@ -260,7 +260,7 @@ class Option(Builtin):
     args: List[Token]
 
 
-@define
+@dataclass
 class Math(Builtin):
     """
     Math expression.
@@ -273,7 +273,7 @@ class Math(Builtin):
     args: List[Token]
 
 
-@define
+@dataclass
 class Include(Builtin):
     """
     Include other CMake file.

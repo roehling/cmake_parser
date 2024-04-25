@@ -18,7 +18,7 @@ Basic functionality for tokenizing CMake code into its syntactic constituents.
 """
 
 import re
-from attrs import define
+from dataclasses import dataclass
 from typing import Generator, List, Tuple
 
 _token_spec = [
@@ -39,7 +39,7 @@ _next_token = re.compile(
 ).match
 
 
-@define
+@dataclass
 class Token:
     """
     Parser token.
