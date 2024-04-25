@@ -70,7 +70,7 @@ _TOKEN_SPEC = [
     ("SEMICOLON", r";"),
     ("VAR_BEGIN", r"\$(?P<VAR_TYPE>[A-Za-z]*)\{"),
     ("VAR_END", r"\}"),
-    ("LITERAL", r"[^\\\$\{\}]+"),
+    ("LITERAL", r".[^\\\$\}]*"),
 ]
 
 _NEXT_TOKEN = re.compile(
