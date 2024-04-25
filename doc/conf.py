@@ -19,7 +19,10 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "src"))
 
-from cmake_parser import __version__  # noqa
+try:
+    from cmake_parser import __version__  # noqa
+except ImportError:
+    __version__ = "HEAD"
 
 project = "cmake_parser"
 copyright = "2023, Timo Röhling"
