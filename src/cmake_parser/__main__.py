@@ -37,7 +37,7 @@ def prepare_args():
         help="parse and resolve CMake arguments",
     )
     m.add_argument(
-        "--eval-expr",
+        "--eval-bool-expr",
         metavar="ARG",
         nargs="*",
         help="parse and evaluate boolean expression",
@@ -92,14 +92,14 @@ if __name__ == "__main__":
         pprint(resolve_args(ctx, cmd.args))
         sys.exit(0)
 
-    if args.eval_expr:
+    if args.eval_bool_expr:
         from .parser import parse_raw
-        from .interpreter import Context, resolve_args, eval_expr
+        from .interpreter import Context, resolve_args, eval_bool_expr
 
-        cmd = next(parse_raw(f"_({' '.join(args.eval_expr)})"))
+        cmd = next(parse_raw(f"_({' '.join(args.eval_bool_expr)})"))
         ctx = Context(var=vars)
         expr = resolve_args(ctx, cmd.args)
-        print(eval_expr(ctx, expr))
+        print(eval_bool_expr(ctx, expr))
         sys.exit(0)
 
     sys.exit(1)

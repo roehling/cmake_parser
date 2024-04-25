@@ -25,6 +25,7 @@ from typing import Dict, List, Tuple, Union, Callable, Any, Type
 from .ast import *
 from .lexer import Token, TokenGenerator
 from .error import CMakeExprError
+from ._internal import deprecated_alias
 
 
 try:
@@ -138,7 +139,7 @@ def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
 
     The returned token list will have a proper 1:1 relation between
     function arguments and tokens. Boolean expressions are suitable
-    input for :func:`eval_expr` after they have been processed by this
+    input for :func:`eval_bool_expr` after they have been processed by this
     function.
 
     :param ctx: the current execution context
@@ -314,28 +315,28 @@ _BINARY_OPS = {
 }
 
 
-def _eval_expr(ctx: Context, G: LookAheadIterator, precedence: int) -> bool:
+def _eval_bool_expr(ctx: Context, G: LookAheadIterator, precedence: int) -> bool:
     token = next(G, None)
     if token is None or token.kind == "RPAREN":
         return False
     stack = []
     while token is not None:
         if token.kind == "LPAREN":
-            stack.append(_eval_expr(ctx, G, precedence=1))
+            stack.append(_eval_bool_expr(ctx, G, precedence=1))
         elif token.kind == "RPAREN":
             if len(stack) != 1:
                 raise CMakeExprError("Malformed expression")
             return _eval_value(ctx, stack.pop())
         elif token.kind == "RAW":
             if token.value == "NOT":
-                stack.append(not _eval_expr(ctx, G, precedence=2))
+                stack.append(not _eval_bool_expr(ctx, G, precedence=2))
             elif token.value == "AND":
                 first_arg = _eval_value(ctx, stack.pop())
-                second_arg = _eval_expr(ctx, G, precedence=2)
+                second_arg = _eval_bool_expr(ctx, G, precedence=2)
                 stack.append(first_arg and second_arg)
             elif token.value == "OR":
                 first_arg = _eval_value(ctx, stack.pop())
-                second_arg = _eval_expr(ctx, G, precedence=2)
+                second_arg = _eval_bool_expr(ctx, G, precedence=2)
                 stack.append(first_arg or second_arg)
             else:
                 unary_op = _UNARY_OPS.get(token.value, None)
@@ -369,7 +370,7 @@ def _eval_expr(ctx: Context, G: LookAheadIterator, precedence: int) -> bool:
     return _eval_value(ctx, stack.pop())
 
 
-def eval_expr(ctx: Context, args: List[Token]) -> bool:
+def eval_bool_expr(ctx: Context, args: List[Token]) -> bool:
     """
     Evaluate boolean expressions.
 
@@ -386,4 +387,13 @@ def eval_expr(ctx: Context, args: List[Token]) -> bool:
     :raise: :exc:`~cmake_parser.error.CMakeExprError` if the expression is malformed.
     """
     G = LookAheadIterator(args)
-    return _eval_expr(ctx, G, precedence=1)
+    return _eval_bool_expr(ctx, G, precedence=1)
+
+
+@deprecated_alias(eval_bool_expr)
+def eval_expr(ctx: Context, args: List[Token]) -> bool:
+    """
+    Evaluate boolean expressions.
+
+    This is a deprecated alias for :func:`eval_bool_expr`.
+    """
