@@ -42,11 +42,11 @@ class Context:
     Execution context for CMake code.
 
     :param parent: the parent of a scoped context or :const:`None` for the top-level context.
-    :param var: dataclassd CMake variables
+    :param var: defined CMake variables
     :param env: available environment variables
-    :param cache: dataclassd CMake cache variables
-    :param functions: dataclassd functions
-    :param macros: dataclassd macros
+    :param cache: defined CMake cache variables
+    :param functions: defined functions
+    :param macros: defined macros
     """
 
     parent: Self = None
@@ -232,7 +232,7 @@ def _get_argument(op: str, G: TokenGenerator) -> Token:
     return token
 
 
-def _eval_dataclassd(ctx: Context, arg: Token) -> bool:
+def _eval_defined(ctx: Context, arg: Token) -> bool:
     return arg.value in ctx.var
 
 
@@ -290,7 +290,7 @@ _PRECEDENCES = {
 }
 
 _UNARY_OPS = {
-    "DEFINED": _eval_dataclassd,
+    "DEFINED": _eval_defined,
     "EXISTS": _eval_exists,
     "COMMAND": _eval_command,
 }
