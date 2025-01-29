@@ -15,11 +15,11 @@
 # limitations under the License.
 
 from .error import *
-from .lexer import Token, tokenize
-from .parser import parse_raw, parse_tree
-from .interpreter import resolve_args
+from .lexer import Token, tokenize  # type: ignore[reportUnusedImport]
+from .parser import parse_raw, parse_tree  # type: ignore[reportUnusedImport]
+from .interpreter import resolve_args  # type: ignore[reportUnusedImport]^
 
 try:
-    from ._version import __version__
+    from ._version import __version__  # type: ignore[reportUnusedImport]
 except ImportError:
     pass

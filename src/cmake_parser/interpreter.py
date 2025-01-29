@@ -21,9 +21,21 @@ import re
 import os
 from dataclasses import dataclass, replace, field
 from functools import partial
-from typing import Dict, List, Tuple, Union, Callable, Any, Type
+from typing import (
+    cast,
+    Dict,
+    List,
+    Tuple,
+    Union,
+    Callable,
+    Any,
+    TypeVar,
+    Generic,
+    Iterable,
+    Iterator,
+)
 from .ast import *
-from .lexer import Token, TokenGenerator
+from .lexer import Token
 from .error import CMakeExprError
 from ._internal import deprecated_alias
 
@@ -49,7 +61,7 @@ class Context:
     :param macros: defined macros
     """
 
-    parent: Self = None
+    parent: Optional[Self] = None
     var: Dict[str, str] = field(default_factory=dict)
     env: Dict[str, str] = field(default_factory=dict)
     cache: Dict[str, str] = field(default_factory=dict)
@@ -92,7 +104,7 @@ def _resolve_vars(ctx: Context, token: Token) -> str:
         result = ""
         mo = _NEXT_TOKEN(s, pos)
         while mo:
-            kind = mo.lastgroup
+            kind = cast(str, mo.lastgroup)
             val = mo.group(kind)
             if kind == "VAR_BEGIN":
                 var_type = mo.group("VAR_TYPE")
@@ -122,7 +134,7 @@ def _resolve_vars(ctx: Context, token: Token) -> str:
 
 
 def _split(s: str) -> List[str]:
-    result = []
+    result: List[str] = []
     for item in re.finditer(r"(?:\\.|[^;\\])+", s):
         result.append(item.group(0).replace("\\;", ";"))
     return result
@@ -148,7 +160,7 @@ def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
         :func:`~cmake_parser.parser.parse_tree`.
     :return: a new argument list with all variable references resolved
     """
-    result = []
+    result: List[Token] = []
     for token in args:
         if token.kind == "RAW":
             value = _resolve_vars(ctx, token)
@@ -162,23 +174,27 @@ def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
     return result
 
 
-class LookAheadIterator:
-    def __init__(self, iterable):
-        self._iterable = iter(iterable)
-        self._exhausted = False
-        self._lookahead = None
+_T = TypeVar("_T")
+
+
+class LookAheadIterator(Generic[_T]):
+    def __init__(self, iterable: Iterable[_T]):
+        self._iterable: Iterator[_T] = iter(iterable)
+        self._exhausted: bool = False
         try:
-            self._lookahead = next(self._iterable)
+            self._lookahead: _T = next(self._iterable)
         except StopIteration:
             self._exhausted = True
 
-    def peek(self):
+    def peek(self) -> _T:
+        if self._exhausted:
+            raise StopIteration
         return self._lookahead
 
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> _T:
         if self._exhausted:
             raise StopIteration
         value = self._lookahead
@@ -225,7 +241,7 @@ def _eval_value(ctx: Context, value: Union[bool, Token, str]) -> bool:
     return not _is_false_constant(value)
 
 
-def _get_argument(op: str, G: TokenGenerator) -> Token:
+def _get_argument(op: str, G: LookAheadIterator[Token]) -> Token:
     token = next(G, None)
     if token is None or token.kind not in ["RAW", "QUOTED"]:
         raise CMakeExprError(f"missing argument for {op} operator")
@@ -248,18 +264,24 @@ def _path(s: str) -> str:
     return re.sub(r"([\\/])\1+", r"\1", s)
 
 
-def _version(s: str) -> Tuple[int, int, int, int]:
+_Version = Tuple[int, int, int, int]
+
+
+def _version(s: str) -> _Version:
     def _try_int(s: str) -> int:
         try:
             return int(s)
         except ValueError:
             return 0
 
-    return tuple(_try_int(v) for v in (s.split(".") + ["0", "0", "0", "0"])[:4])
+    return cast(
+        _Version,
+        tuple(_try_int(v) for v in (s.split(".") + ["0", "0", "0", "0"])[:4]),
+    )
 
 
 def _eval_compare(
-    coerce: Type[Any],
+    coerce: Callable[[str], Any],
     compare: Callable[[Any, Any], bool],
     ctx: Context,
     arg1: Token,
@@ -315,11 +337,11 @@ _BINARY_OPS = {
 }
 
 
-def _eval_bool_expr(ctx: Context, G: LookAheadIterator, precedence: int) -> bool:
+def _eval_bool_expr(ctx: Context, G: LookAheadIterator[Token], precedence: int) -> bool:
     token = next(G, None)
     if token is None or token.kind == "RPAREN":
         return False
-    stack = []
+    stack: List[bool | Token] = []
     while token is not None:
         if token.kind == "LPAREN":
             stack.append(_eval_bool_expr(ctx, G, precedence=1))
@@ -351,19 +373,24 @@ def _eval_bool_expr(ctx: Context, G: LookAheadIterator, precedence: int) -> bool
                                 f"missing argument for {token.value} operator"
                             )
                         first_arg = stack.pop()
+                        if not isinstance(first_arg, Token):
+                            raise CMakeExprError(
+                                f"missing argument for {token.value} operator"
+                            )
                         second_arg = _get_argument(token.value, G)
                         stack.append(binary_op(ctx, first_arg, second_arg))
                     else:
                         stack.append(token)
         else:
             stack.append(token)
-        lookahead = G.peek()
-        if lookahead is None:
+        try:
+            lookahead = G.peek()
+            if lookahead.kind == "RAW":
+                lookahead_precendence = _PRECEDENCES.get(lookahead.value, precedence)
+                if lookahead_precendence < precedence:
+                    break
+        except StopIteration:
             break
-        if lookahead.kind == "RAW":
-            lookahead_precendence = _PRECEDENCES.get(lookahead.value, precedence)
-            if lookahead_precendence < precedence:
-                break
         token = next(G, None)
     if len(stack) != 1:
         raise CMakeExprError("Malformed expression")
@@ -397,3 +424,4 @@ def eval_expr(ctx: Context, args: List[Token]) -> bool:
 
     This is a deprecated alias for :func:`eval_bool_expr`.
     """
+    ...

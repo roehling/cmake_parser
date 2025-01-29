@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 
-def prepare_args():
+
+def prepare_args() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser()
     m = p.add_mutually_exclusive_group(required=True)
     m.add_argument(
@@ -59,14 +61,14 @@ def prepare_args():
 
 
 if __name__ == "__main__":
-    import argparse
     import sys
     from pprint import pprint
+    from typing import cast, Dict
 
     parser = prepare_args()
     args = parser.parse_args()
 
-    vars = {}
+    vars: Dict[str, str] = {}
     for name_value in args.D:
         name, value = name_value.split("=", 1)
         vars[name] = value
@@ -86,8 +88,9 @@ if __name__ == "__main__":
     if args.resolve_args:
         from .parser import parse_raw
         from .interpreter import Context, resolve_args
+        from .ast import Command
 
-        cmd = next(parse_raw(f"_({' '.join(args.resolve_args)})"))
+        cmd = cast(Command, next(parse_raw(f"_({' '.join(args.resolve_args)})")))
         ctx = Context(var=vars)
         pprint(resolve_args(ctx, cmd.args))
         sys.exit(0)
@@ -95,8 +98,9 @@ if __name__ == "__main__":
     if args.eval_bool_expr:
         from .parser import parse_raw
         from .interpreter import Context, resolve_args, eval_bool_expr
+        from .ast import Command
 
-        cmd = next(parse_raw(f"_({' '.join(args.eval_bool_expr)})"))
+        cmd = cast(Command, next(parse_raw(f"_({' '.join(args.eval_bool_expr)})")))
         ctx = Context(var=vars)
         expr = resolve_args(ctx, cmd.args)
         print(eval_bool_expr(ctx, expr))

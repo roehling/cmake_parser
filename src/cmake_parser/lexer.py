@@ -19,7 +19,7 @@ Basic functionality for tokenizing CMake code into its syntactic constituents.
 
 import re
 from dataclasses import dataclass
-from typing import Generator, List, Tuple
+from typing import cast, Generator, Tuple
 
 _token_spec = [
     ("SP", r"\s+"),
@@ -103,11 +103,11 @@ def tokenize(data: str) -> TokenGenerator:
     """
     pos = 0
     LR = line_ranges(data)
-    L = next(LR, None)
+    line_span = next(LR, None)
     line = 1
     mo = _next_token(data)
-    while mo is not None:
-        kind = mo.lastgroup
+    while mo is not None and line_span is not None:
+        kind = cast(str, mo.lastgroup)
         if kind != "SP":
             val = mo.group(kind)
             if kind == "QUOTED":
@@ -133,18 +133,18 @@ def tokenize(data: str) -> TokenGenerator:
                 value=val,
                 span=slice(mo.start(), mo.end()),
                 line=line,
-                column=mo.start() + 1 - L[0],
+                column=mo.start() + 1 - line_span[0],
             )
         pos = mo.end()
-        while L and L[1] < pos:
-            L = next(LR, None)
+        while line_span is not None and line_span[1] < pos:
+            line_span = next(LR, None)
             line += 1
         mo = _next_token(data, pos)
-    if pos < len(data):
+    if pos < len(data) and line_span is not None:
         yield Token(
             kind="UNPARSEABLE",
-            value=None,
+            value=data[pos:],
             span=slice(pos, len(data)),
             line=line,
-            column=pos + 1 - L[0],
+            column=pos + 1 - line_span[0],
         )

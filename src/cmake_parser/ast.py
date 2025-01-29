@@ -23,27 +23,31 @@ from typing import Generator, List, Optional
 from .lexer import Token
 
 
+@dataclass
 class AstNode:
-    """Base class for all Abstract Syntax Tree elements"""
+    """Base class for all Abstract Syntax Tree elements
+
+    :param span: the code location in the parsed string.
+    """
+
+    span: slice
 
 
 AstNodeGenerator = Generator[AstNode, None, None]
 
 
 @dataclass
-class AstFileNode:
+class AstFileNode(AstNode):
     """
     Base class for all AST nodes with associated file location
 
     :param line: the line number where the corresponding code begins.
         Note that the code can span multiple lines.
     :param column: the column where the corresponding code begins.
-    :param span: the code location in the parsed string.
     """
 
     line: int
     column: int
-    span: slice
 
 
 @dataclass
@@ -67,7 +71,31 @@ class Command(AstFileNode):
 
 @dataclass
 class Builtin(AstFileNode):
-    """Base class for AST nodes which represent CMake built-in instructions"""
+    """Base class for AST nodes which represent CMake built-in instructions with parseable arguments.
+
+    :param args: the list of arguments.
+
+    .. include:: argument_note.rst
+
+    """
+
+    args: List[Token]
+
+
+@dataclass
+class BuiltinNoArgs(AstFileNode):
+    """Base class for AST nodes which represent CMake built-in instructions which can never have arguments"""
+
+
+@dataclass
+class BuiltinBlock(Builtin):
+    """Base class for AST nodes which represent a block of CMake commands
+
+    :param body: the list of commands which form the block.
+
+    """
+
+    body: List[AstNode]
 
 
 @dataclass
@@ -86,86 +114,48 @@ class Comment(AstFileNode):
 
 
 @dataclass
-class Macro(Builtin):
+class Macro(BuiltinBlock):
     """
     Macro definition.
 
     This node represents a ``macro()``/``endmacro()`` block.
-
-    :param args: the list of named macro parameters.
-    :param body: the list of commands which form the macro.
-
-    .. include:: argument_note.rst
     """
-
-    args: List[Token]
-    body: List[AstNode]
 
 
 @dataclass
-class Function(Builtin):
+class Function(BuiltinBlock):
     """
     Macro definition.
 
     This node represents a ``function()``/``endfunction()`` block.
-
-    :param args: the list of named function parameters.
-    :param body: the list of commands which form the function.
-
-    .. include:: argument_note.rst
     """
-
-    args: List[Token]
-    body: List[AstNode]
 
 
 @dataclass
-class Block(Builtin):
+class Block(BuiltinBlock):
     """
     Scoped block.
 
     This node represents a ``block()``/``endblock()`` block.
-
-    :param args: block arguments.
-    :param body: the list of commands which form the block.
-
-    .. include:: argument_note.rst
     """
-
-    args: List[Token]
-    body: List[AstNode]
 
 
 @dataclass
-class ForEach(Builtin):
+class ForEach(BuiltinBlock):
     """
     ForEach Loop.
 
     This node represents a ``foreach()``/``endforeach()`` block.
-
-    :param args: loop arguments.
-    :param body: the list of commands which form the loop.
-
-    .. include:: argument_note.rst
     """
-
-    args: List[Token]
-    body: List[AstNode]
 
 
 @dataclass
-class While(Builtin):
+class While(BuiltinBlock):
     """
     While Loop.
 
     This node represents a ``while()``/``endwhile()`` block.
-
-    :param args: boolean expression for loop invariant.
-    :param body: the list of commands which form the loop.
     """
-
-    args: List[Token]
-    body: List[AstNode]
 
 
 @dataclass
@@ -176,17 +166,15 @@ class If(Builtin):
     This node represents a ``if()``/``else()``/``endif()`` block. ``elseif()`` statements are converted
     into a single :py:class:`If` command in ``if_false``.
 
-    :param args: boolean expression.
     :param if_true: the list of commands to be executed if the expression evaluates to :py:const:`True`.
     :param if_false: the list of commands to be executed if the expression evaluates to :py:const:`False`.
     """
 
-    args: List[Token]
     if_true: List[AstNode]
     if_false: Optional[List[AstNode]]
 
 
-class Break(Builtin):
+class Break(BuiltinNoArgs):
     """
     Loop exit.
 
@@ -194,7 +182,7 @@ class Break(Builtin):
     """
 
 
-class Continue(Builtin):
+class Continue(BuiltinNoArgs):
     """
     Loop continuation.
 
@@ -208,13 +196,7 @@ class Return(Builtin):
     Return from function or module.
 
     This node represents the ``return()`` command.
-
-    :param args: list of arguments
-
-    .. include:: argument_note.rst
     """
-
-    args: List[Token]
 
 
 @dataclass
@@ -223,13 +205,7 @@ class Set(Builtin):
     Set variable.
 
     This node represents the ``set()`` command.
-
-    :param args: list of arguments
-
-    .. include:: argument_note.rst
     """
-
-    args: List[Token]
 
 
 @dataclass
@@ -238,13 +214,7 @@ class Unset(Builtin):
     Unset variable.
 
     This node represents the ``unset()`` command.
-
-    :param args: list of arguments
-
-    .. include:: argument_note.rst
     """
-
-    args: List[Token]
 
 
 @dataclass
@@ -253,11 +223,7 @@ class Option(Builtin):
     Declare CMake option.
 
     This node represents the ``option()`` command.
-
-    :param args: option definition
     """
-
-    args: List[Token]
 
 
 @dataclass
@@ -267,10 +233,7 @@ class Math(Builtin):
 
     This node represents the ``math()`` command.
 
-    :param args: mathematical expression
     """
-
-    args: List[Token]
 
 
 @dataclass
@@ -279,10 +242,4 @@ class Include(Builtin):
     Include other CMake file.
 
     This node represents the ``include()`` command.
-
-    :param args: list of arguments
-
-    .. include:: argument_note.rst
     """
-
-    args: List[Token]

@@ -18,12 +18,18 @@ Internal utility functions
 """
 from functools import wraps
 from warnings import warn
+from typing import Callable, ParamSpec, TypeVar
+
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
 
 
-def deprecated_alias(new_func):
-    def deprecated_alias_impl(old_func):
-        @wraps(old_func)
-        def wrapper(*args, **kwargs):
+def deprecated_alias[
+    _T, **_P
+](new_func: Callable[_P, _T]) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
+    def deprecated_alias_impl(old_func: Callable[_P, _T]) -> Callable[_P, _T]:
+        @wraps(new_func)
+        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
             warn(
                 f"{old_func.__name__} is a deprecated alias for {new_func.__name__}",
                 DeprecationWarning,

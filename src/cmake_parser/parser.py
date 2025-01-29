@@ -17,20 +17,20 @@ Core functionality for parsing CMake code.
 """
 import re
 from functools import partial
-from typing import List, Optional, Type
+from typing import cast, List, Dict, Optional, Type, NoReturn, Callable
 from .lexer import tokenize, TokenGenerator
 from .ast import *
 from .error import CMakeParseError
 
 
-def _bail(item, data, msg):
+def _bail(item: Token | AstFileNode, data: str, msg: str) -> NoReturn:
     raise CMakeParseError(
         f"{msg} at line {item.line}, column {item.column}: {data[item.span]!r}"
     )
 
 
 def _parse_argument_tokens(G: TokenGenerator) -> List[Token]:
-    result = []
+    result: List[Token] = []
     token = next(G, None)
     while token is not None:
         if token.kind != "SEMICOLON":
@@ -99,7 +99,7 @@ def parse_raw(data: str, skip_comments: bool = False) -> AstNodeGenerator:
 
 
 def _parse_block(
-    cls: Type[AstNode],
+    cls: Type[BuiltinBlock],
     cmd: Command,
     data: str,
     G: AstNodeGenerator,
@@ -124,7 +124,7 @@ def _parse_alias(
 
 
 def _parse_noargs(
-    cls: Type[Builtin], cmd: Command, data: str, G: AstNodeGenerator
+    cls: Type[BuiltinNoArgs], cmd: Command, data: str, G: AstNodeGenerator
 ) -> AstNodeGenerator:
     if cmd.args:
         _bail(cmd, data, "Builtin command accepts no arguments")
@@ -135,7 +135,8 @@ def _parse_if(cmd: Command, data: str, G: AstNodeGenerator) -> AstNodeGenerator:
     if_true = list(
         _parse_elements(data, G, parent=cmd, until=["else", "elseif", "endif"])
     )
-    end = if_true.pop()
+    end = cast(Command, if_true.pop())
+    assert isinstance(end, Command)
     if end.identifier.lower() == "elseif":
         yield If(
             line=cmd.line,
@@ -161,7 +162,9 @@ def _parse_if(cmd: Command, data: str, G: AstNodeGenerator) -> AstNodeGenerator:
     )
 
 
-_transformers = {
+_transformers: Dict[
+    str, Callable[[Command, str, AstNodeGenerator], AstNodeGenerator]
+] = {
     "block": partial(_parse_block, Block),
     "macro": partial(_parse_block, Macro),
     "foreach": partial(_parse_block, ForEach),
@@ -182,7 +185,7 @@ _transformers = {
 def _parse_elements(
     data: str,
     G: AstNodeGenerator,
-    parent: Optional[AstNode] = None,
+    parent: Optional[Command] = None,
     until: Optional[List[str]] = None,
 ) -> AstNodeGenerator:
     elem = next(G, None)
