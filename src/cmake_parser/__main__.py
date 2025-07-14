@@ -63,12 +63,12 @@ def prepare_args() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     import sys
     from pprint import pprint
-    from typing import cast, Dict
+    from typing import cast
 
     parser = prepare_args()
     args = parser.parse_args()
 
-    vars: Dict[str, str] = {}
+    vars: dict[str, str] = {}
     for name_value in args.D:
         name, value = name_value.split("=", 1)
         vars[name] = value

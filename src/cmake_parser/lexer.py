@@ -19,7 +19,8 @@ Basic functionality for tokenizing CMake code into its syntactic constituents.
 
 import re
 from dataclasses import dataclass
-from typing import cast, Generator, Tuple
+from collections.abc import Generator
+from typing import cast
 
 _token_spec = [
     ("SP", r"\s+"),
@@ -73,7 +74,7 @@ class Token:
 TokenGenerator = Generator[Token, None, None]
 
 
-def line_ranges(data: str) -> Generator[Tuple[int, int], None, None]:
+def line_ranges(data: str) -> Generator[tuple[int, int], None, None]:
     start = 0
     for mo in re.finditer(r"\r?\n", data):
         yield (start, mo.start())

@@ -19,7 +19,7 @@ Abstract Syntax Tree elements which are returned by
 :func:`~cmake_parser.parser.parse_tree`.
 """
 from dataclasses import dataclass
-from typing import Generator, List, Optional
+from collections.abc import Generator
 from .lexer import Token
 
 
@@ -66,7 +66,7 @@ class Command(AstFileNode):
     """
 
     identifier: str
-    args: List[Token]
+    args: list[Token]
 
 
 @dataclass
@@ -79,7 +79,7 @@ class Builtin(AstFileNode):
 
     """
 
-    args: List[Token]
+    args: list[Token]
 
 
 @dataclass
@@ -95,7 +95,7 @@ class BuiltinBlock(Builtin):
 
     """
 
-    body: List[AstNode]
+    body: list[AstNode]
 
 
 @dataclass
@@ -170,8 +170,8 @@ class If(Builtin):
     :param if_false: the list of commands to be executed if the expression evaluates to :py:const:`False`.
     """
 
-    if_true: List[AstNode]
-    if_false: Optional[List[AstNode]]
+    if_true: list[AstNode]
+    if_false: list[AstNode] | None
 
 
 class Break(BuiltinNoArgs):

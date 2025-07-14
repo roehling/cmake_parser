@@ -21,31 +21,18 @@ import re
 import os
 from dataclasses import dataclass, replace, field
 from functools import partial
+from collections.abc import Callable, Iterable, Iterator
 from typing import (
     cast,
-    Dict,
-    List,
-    Tuple,
-    Union,
-    Callable,
     Any,
+    Self,
     TypeVar,
     Generic,
-    Iterable,
-    Iterator,
 )
 from .ast import *
 from .lexer import Token
 from .error import CMakeExprError
 from ._internal import deprecated_alias
-
-
-try:
-    from typing import Self
-except ImportError:
-    from typing import TypeVar
-
-    Self = TypeVar("Self", bound="Context")
 
 
 @dataclass
@@ -61,12 +48,12 @@ class Context:
     :param macros: defined macros
     """
 
-    parent: Optional[Self] = None
-    var: Dict[str, str] = field(default_factory=dict)
-    env: Dict[str, str] = field(default_factory=dict)
-    cache: Dict[str, str] = field(default_factory=dict)
-    functions: Dict[str, Function] = field(default_factory=dict)
-    macros: Dict[str, Macro] = field(default_factory=dict)
+    parent: Self | None = None
+    var: dict[str, str] = field(default_factory=dict[str, str])
+    env: dict[str, str] = field(default_factory=dict[str, str])
+    cache: dict[str, str] = field(default_factory=dict[str, str])
+    functions: dict[str, Function] = field(default_factory=dict[str, Function])
+    macros: dict[str, Macro] = field(default_factory=dict[str, Macro])
 
     def exists(self, f: str) -> bool:
         """
@@ -100,7 +87,7 @@ _ESC_SEQS = {
 
 
 def _resolve_vars(ctx: Context, token: Token) -> str:
-    def scan(s: str, pos: int) -> Tuple[str, int]:
+    def scan(s: str, pos: int) -> tuple[str, int]:
         result = ""
         mo = _NEXT_TOKEN(s, pos)
         while mo:
@@ -133,14 +120,14 @@ def _resolve_vars(ctx: Context, token: Token) -> str:
     return scan(token.value, 0)[0]
 
 
-def _split(s: str) -> List[str]:
-    result: List[str] = []
+def _split(s: str) -> list[str]:
+    result: list[str] = []
     for item in re.finditer(r"(?:\\.|[^;\\])+", s):
         result.append(item.group(0).replace("\\;", ";"))
     return result
 
 
-def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
+def resolve_args(ctx: Context, args: list[Token]) -> list[Token]:
     """
     Resolve variable references in argument lists.
 
@@ -160,7 +147,7 @@ def resolve_args(ctx: Context, args: List[Token]) -> List[Token]:
         :func:`~cmake_parser.parser.parse_tree`.
     :return: a new argument list with all variable references resolved
     """
-    result: List[Token] = []
+    result: list[Token] = []
     for token in args:
         if token.kind == "RAW":
             value = _resolve_vars(ctx, token)
@@ -226,7 +213,7 @@ def _is_false_constant(s: str) -> bool:
     )
 
 
-def _eval_value(ctx: Context, value: Union[bool, Token, str]) -> bool:
+def _eval_value(ctx: Context, value: bool | Token | str) -> bool:
     if isinstance(value, bool):
         return value
     if isinstance(value, Token):
@@ -264,7 +251,7 @@ def _path(s: str) -> str:
     return re.sub(r"([\\/])\1+", r"\1", s)
 
 
-_Version = Tuple[int, int, int, int]
+_Version = tuple[int, int, int, int]
 
 
 def _version(s: str) -> _Version:
@@ -341,7 +328,7 @@ def _eval_bool_expr(ctx: Context, G: LookAheadIterator[Token], precedence: int) 
     token = next(G, None)
     if token is None or token.kind == "RPAREN":
         return False
-    stack: List[bool | Token] = []
+    stack: list[bool | Token] = []
     while token is not None:
         if token.kind == "LPAREN":
             stack.append(_eval_bool_expr(ctx, G, precedence=1))
@@ -397,7 +384,7 @@ def _eval_bool_expr(ctx: Context, G: LookAheadIterator[Token], precedence: int) 
     return _eval_value(ctx, stack.pop())
 
 
-def eval_bool_expr(ctx: Context, args: List[Token]) -> bool:
+def eval_bool_expr(ctx: Context, args: list[Token]) -> bool:
     """
     Evaluate boolean expressions.
 
@@ -418,7 +405,7 @@ def eval_bool_expr(ctx: Context, args: List[Token]) -> bool:
 
 
 @deprecated_alias(eval_bool_expr)
-def eval_expr(ctx: Context, args: List[Token]) -> bool:
+def eval_expr(ctx: Context, args: list[Token]) -> bool:
     """
     Evaluate boolean expressions.
 

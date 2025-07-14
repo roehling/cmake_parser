@@ -18,7 +18,8 @@ Internal utility functions
 """
 from functools import wraps
 from warnings import warn
-from typing import Callable, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
+from collections.abc import Callable
 
 _P = ParamSpec("_P")
 _T = TypeVar("_T")

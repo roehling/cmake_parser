@@ -17,7 +17,8 @@ Core functionality for parsing CMake code.
 """
 import re
 from functools import partial
-from typing import cast, List, Dict, Optional, Type, NoReturn, Callable
+from collections.abc import Callable
+from typing import cast, NoReturn
 from .lexer import tokenize, TokenGenerator
 from .ast import *
 from .error import CMakeParseError
@@ -29,8 +30,8 @@ def _bail(item: Token | AstFileNode, data: str, msg: str) -> NoReturn:
     )
 
 
-def _parse_argument_tokens(G: TokenGenerator) -> List[Token]:
-    result: List[Token] = []
+def _parse_argument_tokens(G: TokenGenerator) -> list[Token]:
+    result: list[Token] = []
     token = next(G, None)
     while token is not None:
         if token.kind != "SEMICOLON":
@@ -99,7 +100,7 @@ def parse_raw(data: str, skip_comments: bool = False) -> AstNodeGenerator:
 
 
 def _parse_block(
-    cls: Type[BuiltinBlock],
+    cls: type[BuiltinBlock],
     cmd: Command,
     data: str,
     G: AstNodeGenerator,
@@ -118,13 +119,13 @@ def _parse_block(
 
 
 def _parse_alias(
-    cls: Type[Builtin], cmd: Command, data: str, G: AstNodeGenerator
+    cls: type[Builtin], cmd: Command, data: str, G: AstNodeGenerator
 ) -> AstNodeGenerator:
     yield cls(line=cmd.line, column=cmd.column, span=cmd.span, args=cmd.args)
 
 
 def _parse_noargs(
-    cls: Type[BuiltinNoArgs], cmd: Command, data: str, G: AstNodeGenerator
+    cls: type[BuiltinNoArgs], cmd: Command, data: str, G: AstNodeGenerator
 ) -> AstNodeGenerator:
     if cmd.args:
         _bail(cmd, data, "Builtin command accepts no arguments")
@@ -162,7 +163,7 @@ def _parse_if(cmd: Command, data: str, G: AstNodeGenerator) -> AstNodeGenerator:
     )
 
 
-_transformers: Dict[
+_transformers: dict[
     str, Callable[[Command, str, AstNodeGenerator], AstNodeGenerator]
 ] = {
     "block": partial(_parse_block, Block),
@@ -185,8 +186,8 @@ _transformers: Dict[
 def _parse_elements(
     data: str,
     G: AstNodeGenerator,
-    parent: Optional[Command] = None,
-    until: Optional[List[str]] = None,
+    parent: Command | None = None,
+    until: list[str] | None = None,
 ) -> AstNodeGenerator:
     elem = next(G, None)
     while elem is not None:
