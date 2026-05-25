@@ -15,6 +15,7 @@
 """
 Core functionality for parsing CMake code.
 """
+
 import re
 from functools import partial
 from collections.abc import Callable
