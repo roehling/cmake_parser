@@ -18,6 +18,7 @@ Abstract Syntax Tree elements which are returned by
 :func:`~cmake_parser.parser.parse_raw` and
 :func:`~cmake_parser.parser.parse_tree`.
 """
+
 from dataclasses import dataclass
 from collections.abc import Generator
 from .lexer import Token
